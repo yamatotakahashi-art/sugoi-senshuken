@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>すごい人選手権 - スライドジェネレーター</title>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFF8E7;
+    --ink: #1A1A1A;
+    --pink: #E91E63;
+    --turq: #00897B;
+    --yellow: #F9A825;
+    --purple: #7B1FA2;
+    --coral: #E64A19;
+    --light-pink: #FFD0DC;
+    --light-yellow: #FFE57F;
+    --light-turq: #B2DFDB;
+  }
+
+  body {
+    font-family: "Hiragino Sans", "ヒラギノ角ゴシック", "Yu Gothic", "メイリオ", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* 背景の装飾円 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -100px; left: -100px;
+    width: 400px; height: 400px;
+    background: var(--light-pink);
+    border-radius: 50%;
+    z-index: -1;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px; right: -150px;
+    width: 500px; height: 500px;
+    background: var(--light-turq);
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ヘッダー */
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--pink);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 24px;
+    letter-spacing: 0.05em;
+  }
+
+  h1 {
+    font-size: clamp(40px, 8vw, 72px);
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+  h1 .pink { color: var(--pink); }
+  h1 .turq { color: var(--turq); }
+
+  .subtitle {
+    font-size: 16px;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  /* カード */
+  .card {
+    background: white;
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 0 var(--ink);
+    border: 3px solid var(--ink);
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .card-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--pink);
+    color: white;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  /* フォーム */
+  .form-group {
+    margin-bottom: 24px;
+  }
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  label .required {
+    color: var(--pink);
+    font-size: 12px;
+    margin-left: 6px;
+  }
+  label .optional {
+    color: #888;
+    font-size: 12px;
+    margin-left: 6px;
+  }
+
+  .hint {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #FAFAFA;
+    transition: all 0.2s;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--pink);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.1);
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  /* テーマ選択 */
+  .themes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .theme-card {
+    cursor: pointer;
+    border: 3px solid #ddd;
+    border-radius: 16px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.2s;
+    background: white;
+  }
+  .theme-card:hover {
+    transform: translateY(-2px);
+  }
+  .theme-card.selected {
+    border-color: var(--ink);
+    box-shadow: 0 6px 0 var(--ink);
+    transform: translateY(-2px);
+  }
+
+  .theme-preview {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .preview-pop {
+    background: #FFF8E7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .preview-pop::before {
+    content: '';
+    position: absolute;
+    top: -20%; left: -20%;
+    width: 60%; height: 60%;
+    background: #FFD0DC;
+    border-radius: 50%;
+  }
+  .preview-pop::after {
+    content: 'すごい人';
+    position: relative;
+    color: #E91E63;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .preview-clean {
+    background: white;
+    border: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1A535C;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .preview-vtr {
+    background: #0A0A0A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFD60A;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .theme-card .name {
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .theme-card .desc {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  /* ボタン */
+  .submit-btn {
+    display: block;
+    width: 100%;
+    padding: 20px;
+    background: var(--pink);
+    color: white;
+    border: 3px solid var(--ink);
+    border-radius: 24px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 8px 0 var(--ink);
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .submit-btn:hover:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 6px 0 var(--ink);
+  }
+  .submit-btn:active:not(:disabled) {
+    transform: translateY(8px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+  .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .success-msg {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--light-turq);
+    border: 2px solid var(--turq);
+    border-radius: 12px;
+    color: var(--turq);
+    font-weight: bold;
+    text-align: center;
+  }
+  .success-msg.show { display: block; }
+
+  /* レスポンシブ */
+  @media (max-width: 600px) {
+    .card { padding: 24px 20px; }
+    .themes { grid-template-columns: 1fr; }
+    .theme-card { display: flex; align-items: center; gap: 16px; text-align: left; }
+    .theme-preview { width: 80px; flex-shrink: 0; margin-bottom: 0; }
+  }
+
+  /* フッター */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    font-size: 13px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="badge">⭐ 社内懇親会 特別企画 ⭐</div>
+    <h1>
+      <span class="pink">すごい人</span><br>
+      <span class="turq">選手権</span>
+    </h1>
+    <p class="subtitle">
+      3つの質問に答えるだけで、<br>
+      あなたのプレゼン用スライドが完成 🎤
+    </p>
+  </header>
+
+  <!-- 入力フォーム -->
+  <div class="card">
+    <div class="card-title"><span class="num">1</span>あなたについて</div>
+
+    <div class="form-group">
+      <label>名前 <span class="required">必須</span></label>
+      <input type="text" id="name" placeholder="例: 山田 太郎" maxlength="30">
+    </div>
+
+    <div class="form-group">
+      <label>部署名 <span class="optional">任意</span></label>
+      <input type="text" id="dept" placeholder="例: 営業部" maxlength="40">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="num">2</span>あなたの「すごい」</div>
+
+    <div class="form-group">
+      <label>すごいこと(1行で) <span class="required">必須</span></label>
+      <p class="hint">あなたの実績や特技を、キャッチコピー風に。スライドのメインタイトルになります。</p>
+      <input type="text" id="sugoi" placeholder="例: 100日連続 早起き5時前" maxlength="50">
+    </div>
+
+    <div class="form-group">
+      <label>数字で語れるすごさ <span class="optional">任意</span></label>
+      <p class="hint">数字で表現できるすごさがあれば。「365日」「47都道府県」など。空欄ならスライドからこの項目は省略されます。</p>
+      <input type="text" id="number" placeholder="例: 連続300日 早起き" maxlength="40">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="num">3</span>エピソード</div>
+
+    <div class="form-group">
+      <label>すごさを裏付けるエピソード <span class="required">必須</span></label>
+      <p class="hint">どんなきっかけで?どのくらい続けてる?どうすごいのか、自由に書いてください。</p>
+      <textarea id="episode" placeholder="例: 大学時代に始めた早起きが習慣化。社会人になってからも続け、現在は毎朝4時半起き。早朝のジョギングと読書の時間を確保している。"></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="num">4</span>デザインテーマを選ぶ</div>
+
+    <div class="themes">
+      <div class="theme-card selected" data-theme="pop">
+        <div class="theme-preview preview-pop"></div>
+        <div>
+          <div class="name">ポップ</div>
+          <div class="desc">カラフル明るめ</div>
+        </div>
+      </div>
+      <div class="theme-card" data-theme="clean">
+        <div class="theme-preview preview-clean">SIMPLE</div>
+        <div>
+          <div class="name">シンプル</div>
+          <div class="desc">クリーン白基調</div>
+        </div>
+      </div>
+      <div class="theme-card" data-theme="vtr">
+        <div class="theme-preview preview-vtr">VTR</div>
+        <div>
+          <div class="name">検証VTR風</div>
+          <div class="desc">水ダウ風 黒×黄</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="generateBtn">
+    🎤 スライドをダウンロード
+  </button>
+
+  <div class="success-msg" id="successMsg">
+    ✅ ダウンロードしました!PowerPointで開いて編集してください。
+  </div>
+
+  <footer>
+    ※ 写真は出力後にPowerPointで自由に追加・編集できます
+  </footer>
+
+</div>
+
+<script>
+  // ====== テーマ切り替え ======
+  let currentTheme = 'pop';
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      currentTheme = card.dataset.theme;
+    });
+  });
+
+  // ====== テーマ定義 ======
+  const THEMES = {
+    pop: {
+      bg: "FFF8E7",
+      bgWhite: "FFFFFF",
+      main: "E91E63",        // ピンク
+      accent1: "00897B",     // ターコイズ
+      accent2: "F9A825",     // 黄色
+      accent3: "E64A19",     // コーラル
+      accent4: "7B1FA2",     // パープル
+      text: "1A1A1A",
+      lightAccent: "FFD0DC",
+      lightAccent2: "B2DFDB",
+      lightAccent3: "FFE57F",
+      photoBg: "FFD0DC",
+      photoBorder: "E91E63",
+    },
+    clean: {
+      bg: "FFFFFF",
+      bgWhite: "F8F9FA",
+      main: "1A535C",
+      accent1: "4A90E2",
+      accent2: "F39C12",
+      accent3: "E74C3C",
+      accent4: "2C3E50",
+      text: "2C3E50",
+      lightAccent: "E3F2FD",
+      lightAccent2: "EAF6F6",
+      lightAccent3: "FFF4E6",
+      photoBg: "F0F4F8",
+      photoBorder: "1A535C",
+    },
+    vtr: {
+      bg: "0A0A0A",
+      bgWhite: "1A1A1A",
+      main: "FFD60A",
+      accent1: "E63946",
+      accent2: "FFD60A",
+      accent3: "E63946",
+      accent4: "FFEE32",
+      text: "FFFFFF",
+      lightAccent: "2A2A2A",
+      lightAccent2: "2A2A2A",
+      lightAccent3: "2A2A2A",
+      photoBg: "2A2A2A",
+      photoBorder: "FFD60A",
+    },
+  };
+
+  // ====== スライド生成 ======
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    const name = document.getElementById('name').value.trim();
+    const dept = document.getElementById('dept').value.trim();
+    const sugoi = document.getElementById('sugoi').value.trim();
+    const number = document.getElementById('number').value.trim();
+    const episode = document.getElementById('episode').value.trim();
+
+    // バリデーション
+    if (!name) { alert('「名前」を入力してください'); return; }
+    if (!sugoi) { alert('「すごいこと」を入力してください'); return; }
+    if (!episode) { alert('「エピソード」を入力してください'); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 生成中...';
+
+    setTimeout(() => {
+      try {
+        if (typeof PptxGenJS === 'undefined') {
+          throw new Error('PptxGenJSライブラリが読み込めていません。インターネット接続を確認してください。');
+        }
+        generateSlides({ name, dept, sugoi, number, episode, theme: currentTheme })
+          .then(() => {
+            const successMsg = document.getElementById('successMsg');
+            successMsg.classList.add('show');
+            successMsg.style.background = '';
+            successMsg.style.borderColor = '';
+            successMsg.style.color = '';
+            successMsg.innerHTML = '✅ ダウンロードしました!PowerPointで開いて編集してください。';
+            setTimeout(() => successMsg.classList.remove('show'), 5000);
+          })
+          .catch(err => {
+            showError(err);
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '🎤 スライドをダウンロード';
+          });
+      } catch (e) {
+        showError(e);
+        btn.disabled = false;
+        btn.innerHTML = '🎤 スライドをダウンロード';
+      }
+    }, 100);
+  });
+
+  function showError(e) {
+    const successMsg = document.getElementById('successMsg');
+    successMsg.classList.add('show');
+    successMsg.style.background = '#FFEBEE';
+    successMsg.style.borderColor = '#E91E63';
+    successMsg.style.color = '#C2185B';
+    successMsg.innerHTML = '❌ エラー: ' + e.message + '<br><small style="font-weight:normal">' + (e.stack ? e.stack.split('\n')[0] : '') + '</small>';
+    console.error('Full error:', e);
+  }
+
+  // ====== pptx生成本体 ======
+  function generateSlides(data) {
+    const C = THEMES[data.theme];
+    const isVTR = data.theme === 'vtr';
+    const pres = new PptxGenJS();
+    pres.layout = "LAYOUT_WIDE";
+    pres.title = `すごい人選手権_${data.name}`;
+
+    const fontFace = "メイリオ";
+
+    // ヘルパー: 装飾の円
+    function addDecorations(slide) {
+      if (isVTR) {
+        // VTR風はカドマークとREC表示
+        addCornerMarks(slide);
+        addRecMark(slide);
+      } else {
+        // ポップ/クリーンはドット装飾
+        const dots = [
+          { x: 0.4, y: 0.4, c: C.main, s: 0.22 },
+          { x: 12.7, y: 0.5, c: C.accent1, s: 0.25 },
+          { x: 0.6, y: 6.9, c: C.accent2, s: 0.24 },
+          { x: 12.8, y: 6.8, c: C.accent3, s: 0.2 },
+          { x: 0.2, y: 3.5, c: C.accent2, s: 0.18 },
+          { x: 12.9, y: 3.8, c: C.main, s: 0.16 },
+        ];
+        dots.forEach(d => {
+          slide.addShape(pres.shapes.OVAL, {
+            x: d.x, y: d.y, w: d.s, h: d.s,
+            fill: { color: d.c }, line: { color: d.c, width: 0 },
+          });
+        });
+      }
+    }
+
+    function addCornerMarks(slide) {
+      const marks = [
+        { x: 0.2, y: 0.2 }, { x: 12.93, y: 0.2 },
+        { x: 0.2, y: 7.1 }, { x: 12.93, y: 7.1 },
+      ];
+      marks.forEach(m => {
+        slide.addShape(pres.shapes.RECTANGLE, {
+          x: m.x, y: m.y, w: 0.2, h: 0.03,
+          fill: { color: "FFFFFF" }, line: { width: 0 },
+        });
+        slide.addShape(pres.shapes.RECTANGLE, {
+          x: m.x, y: m.y, w: 0.03, h: 0.2,
+          fill: { color: "FFFFFF" }, line: { width: 0 },
+        });
+      });
+    }
+
+    function addRecMark(slide) {
+      slide.addShape(pres.shapes.OVAL, {
+        x: 0.5, y: 0.45, w: 0.2, h: 0.2,
+        fill: { color: "E63946" }, line: { width: 0 },
+      });
+      slide.addText("● REC", {
+        x: 0.75, y: 0.4, w: 1.2, h: 0.3,
+        fontSize: 14, bold: true, color: "FFFFFF",
+        align: "left", valign: "middle",
+        fontFace: "Arial", margin: 0,
+      });
+    }
+
+    function addLargeDecor(slide) {
+      if (isVTR) return;
+      // 大きな装飾円
+      slide.addShape(pres.shapes.OVAL, {
+        x: -1.5, y: -1.5, w: 4.0, h: 4.0,
+        fill: { color: C.lightAccent }, line: { width: 0 },
+      });
+      slide.addShape(pres.shapes.OVAL, {
+        x: 11, y: 5, w: 3.5, h: 3.5,
+        fill: { color: C.lightAccent2 }, line: { width: 0 },
+      });
+    }
+
+    // ============================================================
+    // スライド1: 表紙
+    // ============================================================
+    const s1 = pres.addSlide();
+    s1.background = { color: C.bg };
+    addLargeDecor(s1);
+    addDecorations(s1);
+
+    // ENTRY バッジ
+    s1.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 5.16, y: 0.7, w: 3.0, h: 0.55,
+      fill: { color: C.accent3 }, line: { width: 0 },
+      rectRadius: 0.27,
+    });
+    s1.addText("🎤 ENTRY 🎤", {
+      x: 5.16, y: 0.7, w: 3.0, h: 0.55,
+      fontSize: 18, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // 部署名(任意)
+    if (data.dept) {
+      s1.addText(data.dept, {
+        x: 0.5, y: 1.5, w: 12.33, h: 0.6,
+        fontSize: 22, bold: true, color: C.accent1,
+        align: "center", valign: "middle",
+        fontFace,
+      });
+    }
+
+    // 名前(でかい)
+    s1.addText(data.name, {
+      x: 0.5, y: data.dept ? 2.2 : 1.8, w: 12.33, h: 1.3,
+      fontSize: 64, bold: true, color: C.text,
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // 「私のすごいは…」
+    s1.addText("私の「すごい」は…", {
+      x: 0.5, y: 3.7, w: 12.33, h: 0.6,
+      fontSize: 22, color: C.text,
+      align: "center", valign: "middle",
+      fontFace,
+    });
+
+    // すごいことハイライト
+    s1.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 1.5, y: 4.5, w: 10.33, h: 1.5,
+      fill: { color: C.accent2 }, line: { color: C.text, width: 3 },
+      rectRadius: 0.2,
+    });
+    s1.addText(data.sugoi, {
+      x: 1.5, y: 4.5, w: 10.33, h: 1.5,
+      fontSize: 36, bold: true, color: C.text,
+      align: "center", valign: "middle",
+      fontFace, margin: 0, wrap: true,
+    });
+
+    s1.addText("です。", {
+      x: 0.5, y: 6.2, w: 12.33, h: 0.6,
+      fontSize: 22, color: C.text,
+      align: "center", valign: "middle",
+      fontFace,
+    });
+
+    // ============================================================
+    // スライド2: 実績(でかい文字)
+    // ============================================================
+    const s2 = pres.addSlide();
+    s2.background = { color: C.bg };
+    addDecorations(s2);
+
+    // タイトルバッジ
+    s2.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 3.16, y: 0.6, w: 7.0, h: 0.8,
+      fill: { color: C.main }, line: { width: 0 },
+      rectRadius: 0.4,
+    });
+    s2.addText("私の「すごい」、それは…", {
+      x: 3.16, y: 0.6, w: 7.0, h: 0.8,
+      fontSize: 24, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // でかい実績
+    s2.addText(data.sugoi, {
+      x: 0.5, y: 2.3, w: 12.33, h: 3.0,
+      fontSize: 64, bold: true, color: C.main,
+      align: "center", valign: "middle",
+      fontFace, margin: 0, wrap: true,
+    });
+
+    // 補足
+    s2.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 2.0, y: 5.8, w: 9.33, h: 1.0,
+      fill: { color: C.accent1 }, line: { width: 0 },
+      rectRadius: 0.5,
+    });
+    s2.addText(`発表者: ${data.name}${data.dept ? ' / ' + data.dept : ''}`, {
+      x: 2.0, y: 5.8, w: 9.33, h: 1.0,
+      fontSize: 20, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // ============================================================
+    // スライド3: 証拠写真枠
+    // ============================================================
+    const s3 = pres.addSlide();
+    s3.background = { color: C.bg };
+    addDecorations(s3);
+
+    // タイトル
+    s3.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 3.66, y: 0.6, w: 6.0, h: 0.8,
+      fill: { color: C.accent1 }, line: { width: 0 },
+      rectRadius: 0.4,
+    });
+    s3.addText("📷 証拠の写真がこちら", {
+      x: 3.66, y: 0.6, w: 6.0, h: 0.8,
+      fontSize: 24, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // 写真枠3つ
+    [0, 1, 2].forEach(i => {
+      const x = 0.5 + i * 4.28;
+      // 枠
+      s3.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+        x, y: 1.9, w: 4.0, h: 4.0,
+        fill: { color: C.photoBg },
+        line: { color: C.photoBorder, width: 3, dashType: "dash" },
+        rectRadius: 0.2,
+      });
+      s3.addText(`📷\nここに写真 ${i + 1}\nを挿入`, {
+        x, y: 1.9, w: 4.0, h: 4.0,
+        fontSize: 16, bold: true, color: C.photoBorder,
+        align: "center", valign: "middle",
+        fontFace,
+      });
+
+      // キャプション
+      s3.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+        x, y: 6.1, w: 4.0, h: 0.7,
+        fill: { color: C.accent2 }, line: { width: 0 },
+        rectRadius: 0.15,
+      });
+      s3.addText("[ キャプション ]", {
+        x, y: 6.1, w: 4.0, h: 0.7,
+        fontSize: 14, bold: true, color: C.text,
+        align: "center", valign: "middle",
+        fontFace, margin: 0,
+      });
+    });
+
+    // ============================================================
+    // スライド4: 数字で見るすごさ
+    // ============================================================
+    const s4 = pres.addSlide();
+    s4.background = { color: C.bg };
+    addDecorations(s4);
+
+    s4.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 3.16, y: 0.6, w: 7.0, h: 0.8,
+      fill: { color: C.accent4 }, line: { width: 0 },
+      rectRadius: 0.4,
+    });
+    s4.addText("📊 数字で見る、私のすごさ", {
+      x: 3.16, y: 0.6, w: 7.0, h: 0.8,
+      fontSize: 24, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // 大きな数字カード
+    s4.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 1.5, y: 2.0, w: 10.33, h: 4.5,
+      fill: { color: C.bgWhite },
+      line: { color: C.accent4, width: 4 },
+      rectRadius: 0.3,
+    });
+
+    if (data.number) {
+      // 数字が入力された場合
+      s4.addText(data.number, {
+        x: 1.5, y: 2.5, w: 10.33, h: 3.5,
+        fontSize: 80, bold: true, color: C.main,
+        align: "center", valign: "middle",
+        fontFace, margin: 0, wrap: true,
+      });
+    } else {
+      // 空欄の場合のプレースホルダー
+      s4.addText("ここに数字で語れるすごさを\n後から記入してください", {
+        x: 1.5, y: 2.5, w: 10.33, h: 3.5,
+        fontSize: 28, color: "888888", italic: true,
+        align: "center", valign: "middle",
+        fontFace, margin: 0,
+      });
+    }
+
+    s4.addText("数字は嘘をつかない。", {
+      x: 0.5, y: 6.7, w: 12.33, h: 0.5,
+      fontSize: 18, italic: true, color: C.text,
+      align: "center", valign: "middle",
+      fontFace,
+    });
+
+    // ============================================================
+    // スライド5: エピソード
+    // ============================================================
+    const s5 = pres.addSlide();
+    s5.background = { color: C.bg };
+    addDecorations(s5);
+
+    s5.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 3.66, y: 0.6, w: 6.0, h: 0.8,
+      fill: { color: C.accent1 }, line: { width: 0 },
+      rectRadius: 0.4,
+    });
+    s5.addText("📖 そのエピソード", {
+      x: 3.66, y: 0.6, w: 6.0, h: 0.8,
+      fontSize: 24, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // 写真枠(左)
+    s5.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 0.5, y: 1.9, w: 4.5, h: 5.0,
+      fill: { color: C.photoBg },
+      line: { color: C.photoBorder, width: 3, dashType: "dash" },
+      rectRadius: 0.2,
+    });
+    s5.addText("📷\nここに\nエピソード写真", {
+      x: 0.5, y: 1.9, w: 4.5, h: 5.0,
+      fontSize: 18, bold: true, color: C.photoBorder,
+      align: "center", valign: "middle",
+      fontFace,
+    });
+
+    // 本文(右)
+    s5.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 5.3, y: 1.9, w: 7.5, h: 5.0,
+      fill: { color: C.bgWhite },
+      line: { color: C.accent1, width: 3 },
+      rectRadius: 0.2,
+    });
+
+    s5.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 5.6, y: 2.1, w: 2.0, h: 0.5,
+      fill: { color: C.main }, line: { width: 0 },
+      rectRadius: 0.25,
+    });
+    s5.addText("STORY", {
+      x: 5.6, y: 2.1, w: 2.0, h: 0.5,
+      fontSize: 14, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace: "Impact", margin: 0,
+    });
+
+    s5.addText(data.episode, {
+      x: 5.6, y: 2.8, w: 6.9, h: 3.9,
+      fontSize: 16, color: C.text,
+      align: "left", valign: "top",
+      fontFace, paraSpaceAfter: 6,
+    });
+
+    // ============================================================
+    // スライド6: 結論
+    // ============================================================
+    const s6 = pres.addSlide();
+    s6.background = { color: C.bg };
+    addDecorations(s6);
+
+    s6.addText("そして、結論…", {
+      x: 0.5, y: 0.7, w: 12.33, h: 0.7,
+      fontSize: 28, italic: true, color: C.text,
+      align: "center", valign: "middle",
+      fontFace,
+    });
+
+    // 結論ボックス
+    s6.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 0.83, y: 1.9, w: 11.66, h: 3.6,
+      fill: { color: C.accent2 },
+      line: { color: C.text, width: 4 },
+      rectRadius: 0.4,
+    });
+
+    s6.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 5.66, y: 1.65, w: 2.0, h: 0.6,
+      fill: { color: C.main },
+      line: { color: "FFFFFF", width: 3 },
+      rectRadius: 0.3,
+    });
+    s6.addText("結論", {
+      x: 5.66, y: 1.65, w: 2.0, h: 0.6,
+      fontSize: 20, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    s6.addText(data.sugoi, {
+      x: 0.83, y: 2.5, w: 11.66, h: 2.4,
+      fontSize: 48, bold: true, color: C.text,
+      align: "center", valign: "middle",
+      fontFace, margin: 0, wrap: true,
+    });
+
+    // 締めメッセージ
+    s6.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 2.0, y: 6.0, w: 9.33, h: 1.0,
+      fill: { color: C.accent1 }, line: { width: 0 },
+      rectRadius: 0.5,
+    });
+    s6.addText(`🎉 以上、${data.name}でした! 🎉`, {
+      x: 2.0, y: 6.0, w: 9.33, h: 1.0,
+      fontSize: 22, bold: true, color: "FFFFFF",
+      align: "center", valign: "middle",
+      fontFace, margin: 0,
+    });
+
+    // ============================================================
+    // ファイル保存
+    // ============================================================
+    const filename = `すごい人選手権_${data.name.replace(/\s/g, '')}.pptx`;
+    return pres.writeFile({ fileName: filename });
+  }
+</script>
+
+</body>
+</html>
