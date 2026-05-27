@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>すごい人選手権 - 拍手投票</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #FFF8E7;
+    --ink: #1A1A1A;
+    --pink: #E91E63;
+    --turq: #00897B;
+    --yellow: #F9A825;
+  }
+
+  body {
+    font-family: "Hiragino Sans", "ヒラギノ角ゴシック", "Yu Gothic", "メイリオ", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* 背景の装飾円 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -100px; left: -100px;
+    width: 300px; height: 300px;
+    background: #FFD0DC;
+    border-radius: 50%;
+    z-index: -1;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px; right: -150px;
+    width: 400px; height: 400px;
+    background: #B2DFDB;
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--pink);
+    color: white;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .title .pink { color: var(--pink); }
+  .title .turq { color: var(--turq); }
+
+  /* 発表者選択 */
+  .selector {
+    background: white;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 0 var(--ink);
+  }
+
+  .selector label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+
+  .selector select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: inherit;
+    background: white;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+  }
+
+  /* メインの拍手ボタン */
+  .clap-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+  }
+
+  .clap-button {
+    width: 280px;
+    height: 280px;
+    max-width: 80vw;
+    max-height: 80vw;
+    border-radius: 50%;
+    background: var(--pink);
+    color: white;
+    border: 6px solid var(--ink);
+    font-size: 80px;
+    cursor: pointer;
+    box-shadow: 0 10px 0 var(--ink);
+    transition: all 0.05s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-weight: bold;
+    position: relative;
+  }
+
+  .clap-button:active:not(:disabled) {
+    transform: translateY(6px);
+    box-shadow: 0 4px 0 var(--ink);
+  }
+
+  .clap-button:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+
+  .clap-button .label {
+    font-size: 16px;
+    position: absolute;
+    bottom: 40px;
+    color: white;
+  }
+
+  /* カウンター表示 */
+  .counter {
+    margin-top: 30px;
+    text-align: center;
+    background: white;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    padding: 16px 24px;
+    box-shadow: 0 5px 0 var(--ink);
+    min-width: 200px;
+  }
+
+  .counter .label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .counter .num {
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--pink);
+    line-height: 1;
+  }
+
+  .counter .unit {
+    font-size: 16px;
+    color: #999;
+    margin-left: 4px;
+  }
+
+  /* ステータス表示 */
+  .status {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #888;
+    min-height: 18px;
+  }
+
+  .status.error { color: var(--pink); }
+  .status.success { color: var(--turq); }
+
+  /* 拍手アニメーション */
+  .float-emoji {
+    position: fixed;
+    font-size: 32px;
+    pointer-events: none;
+    animation: floatUp 1s ease-out forwards;
+    z-index: 100;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(0.5); opacity: 1; }
+    100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
+  }
+
+  /* フッター */
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: #aaa;
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">⭐ 拍手投票 ⭐</div>
+  <div class="title">
+    <span class="pink">すごい人</span><span class="turq">選手権</span>
+  </div>
+</div>
+
+<div class="selector">
+  <label>誰に拍手を送りますか?</label>
+  <select id="presenterSelect">
+    <option value="">-- 発表者を選択 --</option>
+  </select>
+</div>
+
+<div class="clap-area">
+  <button class="clap-button" id="clapBtn" disabled>
+    👏
+  </button>
+
+  <div class="counter">
+    <div class="label">あなたの拍手</div>
+    <div>
+      <span class="num" id="myCount">0</span>
+      <span class="unit">回</span>
+    </div>
+  </div>
+
+  <div class="status" id="status">発表者を選んでください</div>
+</div>
+
+<div class="footer-note">
+  ※ 集計結果は発表後に司会者から発表されます
+</div>
+
+<script>
+  // ====== 設定 ======
+  // ⚠️ ここにGoogle Apps ScriptのデプロイURLを貼り付けてください
+  const GAS_URL = 'https://script.google.com/a/macros/marchon.co.jp/s/AKfycbw8AhGpnu0w20gSxPAfPnVFZ-dWcFm89Abq7bk13LjlwKduCvTNowMxYBpeZH4ap5OU/exec';
+
+  // ====== 状態管理 ======
+  let presenters = [];
+  let currentPresenter = '';
+  let myCount = 0;
+  let pendingClaps = 0; // バッチ送信用のバッファ
+  let sendTimer = null;
+
+  // ====== 要素取得 ======
+  const select = document.getElementById('presenterSelect');
+  const clapBtn = document.getElementById('clapBtn');
+  const myCountEl = document.getElementById('myCount');
+  const statusEl = document.getElementById('status');
+
+  // ====== 初期化: 発表者リストを取得 ======
+  async function loadPresenters() {
+    try {
+      statusEl.textContent = '発表者を読み込み中...';
+      const res = await fetch(GAS_URL + '?action=list');
+      const data = await res.json();
+      if (data.presenters && Array.isArray(data.presenters)) {
+        presenters = data.presenters;
+        select.innerHTML = '<option value="">-- 発表者を選択 --</option>';
+        presenters.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p;
+          opt.textContent = p;
+          select.appendChild(opt);
+        });
+        statusEl.textContent = '発表者を選んでください';
+      } else {
+        throw new Error('発表者リストが取得できませんでした');
+      }
+    } catch (e) {
+      statusEl.textContent = 'エラー: ' + e.message;
+      statusEl.className = 'status error';
+      console.error(e);
+    }
+  }
+
+  // ====== 発表者選択時 ======
+  select.addEventListener('change', () => {
+    currentPresenter = select.value;
+    if (currentPresenter) {
+      clapBtn.disabled = false;
+      myCount = 0;
+      myCountEl.textContent = '0';
+      statusEl.textContent = `${currentPresenter}さんに拍手!`;
+      statusEl.className = 'status success';
+    } else {
+      clapBtn.disabled = true;
+      statusEl.textContent = '発表者を選んでください';
+      statusEl.className = 'status';
+    }
+  });
+
+  // ====== 拍手ボタン押下時 ======
+  clapBtn.addEventListener('click', (e) => {
+    if (!currentPresenter) return;
+
+    myCount++;
+    pendingClaps++;
+    myCountEl.textContent = myCount;
+
+    // 飛び出すエフェクト
+    createFloatEmoji(e.clientX, e.clientY);
+
+    // バッチ送信(連打を効率的にまとめる)
+    if (sendTimer) clearTimeout(sendTimer);
+    sendTimer = setTimeout(() => {
+      sendClaps();
+    }, 500); // 500ms後にまとめて送信
+  });
+
+  // ====== 拍手データ送信 ======
+  async function sendClaps() {
+    if (pendingClaps === 0 || !currentPresenter) return;
+
+    const sendCount = pendingClaps;
+    pendingClaps = 0;
+
+    try {
+      // GASにPOSTすると問題が出やすいのでGETパラメータで送る
+      const url = `${GAS_URL}?action=clap&presenter=${encodeURIComponent(currentPresenter)}&count=${sendCount}`;
+      await fetch(url);
+    } catch (e) {
+      // 失敗してもユーザーには見せず、内部で再キュー
+      pendingClaps += sendCount;
+      console.error('Send failed:', e);
+    }
+  }
+
+  // ====== ページ離脱時に未送信分を送る ======
+  window.addEventListener('beforeunload', () => {
+    if (pendingClaps > 0 && currentPresenter) {
+      const url = `${GAS_URL}?action=clap&presenter=${encodeURIComponent(currentPresenter)}&count=${pendingClaps}`;
+      navigator.sendBeacon(url);
+    }
+  });
+
+  // ====== 飛び出すアニメーション ======
+  function createFloatEmoji(x, y) {
+    const emojis = ['👏', '🎉', '✨', '👍', '🔥'];
+    const emoji = document.createElement('div');
+    emoji.className = 'float-emoji';
+    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    emoji.style.left = (x - 20) + 'px';
+    emoji.style.top = (y - 20) + 'px';
+    document.body.appendChild(emoji);
+    setTimeout(() => emoji.remove(), 1000);
+  }
+
+  // ====== 起動 ======
+  if (GAS_URL === 'https://script.google.com/a/macros/marchon.co.jp/s/AKfycbw8AhGpnu0w20gSxPAfPnVFZ-dWcFm89Abq7bk13LjlwKduCvTNowMxYBpeZH4ap5OU/exec') {
+    statusEl.textContent = '⚠️ GAS_URLが設定されていません';
+    statusEl.className = 'status error';
+  } else {
+    loadPresenters();
+  }
+</script>
+
+</body>
+</html>

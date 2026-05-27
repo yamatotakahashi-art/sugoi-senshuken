@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>すごい人選手権 - 集計結果(司会者用)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFF8E7;
+    --ink: #1A1A1A;
+    --pink: #E91E63;
+    --turq: #00897B;
+    --yellow: #F9A825;
+    --gold: #FFD700;
+    --silver: #C0C0C0;
+    --bronze: #CD7F32;
+  }
+
+  body {
+    font-family: "Hiragino Sans", "ヒラギノ角ゴシック", "Yu Gothic", "メイリオ", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -150px; left: -150px;
+    width: 500px; height: 500px;
+    background: #FFD0DC;
+    border-radius: 50%;
+    z-index: -1;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: #B2DFDB;
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--pink);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 48px;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  h1 .pink { color: var(--pink); }
+  h1 .turq { color: var(--turq); }
+
+  .subtitle {
+    font-size: 16px;
+    color: #666;
+  }
+
+  /* コントロール */
+  .controls {
+    background: white;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 6px 0 var(--ink);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .controls button {
+    background: var(--pink);
+    color: white;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 0 var(--ink);
+    transition: all 0.1s;
+  }
+  .controls button:hover {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .controls button.secondary {
+    background: white;
+    color: var(--ink);
+  }
+
+  .auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* ランキング */
+  .ranking {
+    background: white;
+    border: 3px solid var(--ink);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 8px 0 var(--ink);
+  }
+
+  .ranking h2 {
+    font-size: 24px;
+    margin-bottom: 24px;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    border-bottom: 2px dashed #eee;
+    transition: all 0.3s;
+  }
+  .rank-item:last-child {
+    border-bottom: none;
+  }
+
+  .rank-item.rank-1 {
+    background: linear-gradient(to right, rgba(255, 215, 0, 0.15), transparent);
+    border-radius: 16px;
+  }
+  .rank-item.rank-2 {
+    background: linear-gradient(to right, rgba(192, 192, 192, 0.15), transparent);
+    border-radius: 16px;
+  }
+  .rank-item.rank-3 {
+    background: linear-gradient(to right, rgba(205, 127, 50, 0.15), transparent);
+    border-radius: 16px;
+  }
+
+  .rank-num {
+    font-size: 36px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: center;
+  }
+  .rank-num .medal { font-size: 48px; }
+
+  .rank-1 .rank-num { color: var(--gold); }
+  .rank-2 .rank-num { color: var(--silver); }
+  .rank-3 .rank-num { color: var(--bronze); }
+
+  .rank-name {
+    flex: 1;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .rank-1 .rank-name { font-size: 32px; }
+
+  .rank-count {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--pink);
+    min-width: 120px;
+    text-align: right;
+  }
+  .rank-1 .rank-count { font-size: 40px; }
+
+  .rank-count .unit {
+    font-size: 14px;
+    color: #999;
+    margin-left: 4px;
+  }
+
+  /* 個別発表者の集計表示モード */
+  .single-mode {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .single-mode .name {
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: var(--ink);
+  }
+
+  .single-mode .count-wrap {
+    background: var(--yellow);
+    border: 6px solid var(--ink);
+    border-radius: 24px;
+    padding: 40px;
+    display: inline-block;
+    min-width: 400px;
+    box-shadow: 0 8px 0 var(--ink);
+  }
+
+  .single-mode .count-label {
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .single-mode .count-num {
+    font-size: 120px;
+    font-weight: bold;
+    color: var(--pink);
+    line-height: 1;
+  }
+
+  .single-mode .count-unit {
+    font-size: 32px;
+    color: var(--ink);
+    margin-left: 10px;
+  }
+
+  /* タブ切替 */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 12px;
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .tab.active {
+    background: var(--ink);
+    color: white;
+  }
+
+  /* 個別モードの選択 */
+  .single-selector {
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .single-selector select {
+    padding: 12px 20px;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    background: white;
+  }
+
+  /* ステータス */
+  .status {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #888;
+  }
+  .status.error { color: var(--pink); }
+
+  .loading {
+    text-align: center;
+    padding: 60px;
+    color: #999;
+    font-size: 18px;
+  }
+
+  /* 発表演出 */
+  @keyframes celebration {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .single-mode .count-wrap.celebrate {
+    animation: celebration 0.8s ease-out;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="badge">📊 司会者用画面</div>
+    <h1>
+      <span class="pink">すごい人</span><span class="turq">選手権</span>
+    </h1>
+    <div class="subtitle">拍手集計結果</div>
+  </header>
+
+  <div class="controls">
+    <div>
+      <button id="refreshBtn">🔄 更新</button>
+      <button id="resetBtn" class="secondary">⚠️ リセット</button>
+    </div>
+    <div class="auto-refresh">
+      <input type="checkbox" id="autoRefresh">
+      <label for="autoRefresh">10秒ごとに自動更新</label>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="ranking">🏆 ランキング表示</button>
+    <button class="tab" data-tab="single">👤 個別発表モード</button>
+  </div>
+
+  <!-- ランキングモード -->
+  <div id="rankingView" class="ranking">
+    <h2>🏆 全体ランキング</h2>
+    <div id="rankingContent" class="loading">読み込み中...</div>
+  </div>
+
+  <!-- 個別モード -->
+  <div id="singleView" class="ranking" style="display: none;">
+    <div class="single-selector">
+      <select id="singleSelect">
+        <option value="">-- 発表者を選択 --</option>
+      </select>
+    </div>
+    <div id="singleContent" class="single-mode">
+      <div class="loading">発表者を選んでください</div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+</div>
+
+<script>
+  // ⚠️ ここにGoogle Apps ScriptのデプロイURLを貼り付けてください
+  const GAS_URL = 'https://script.google.com/a/macros/marchon.co.jp/s/AKfycbw8AhGpnu0w20gSxPAfPnVFZ-dWcFm89Abq7bk13LjlwKduCvTNowMxYBpeZH4ap5OU/exec';
+
+  let allData = []; // [{name, count}, ...]
+  let autoRefreshInterval = null;
+
+  const rankingContent = document.getElementById('rankingContent');
+  const singleSelect = document.getElementById('singleSelect');
+  const singleContent = document.getElementById('singleContent');
+  const statusEl = document.getElementById('status');
+
+  // ====== タブ切替 ======
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const tabName = tab.dataset.tab;
+      document.getElementById('rankingView').style.display = tabName === 'ranking' ? 'block' : 'none';
+      document.getElementById('singleView').style.display = tabName === 'single' ? 'block' : 'none';
+    });
+  });
+
+  // ====== データ取得 ======
+  async function loadData() {
+    try {
+      const res = await fetch(GAS_URL + '?action=results');
+      const data = await res.json();
+      if (data.results && Array.isArray(data.results)) {
+        allData = data.results;
+        renderRanking();
+        updateSelector();
+        statusEl.textContent = '最終更新: ' + new Date().toLocaleTimeString();
+        statusEl.className = 'status';
+      } else {
+        throw new Error('データ取得失敗');
+      }
+    } catch (e) {
+      statusEl.textContent = 'エラー: ' + e.message;
+      statusEl.className = 'status error';
+      console.error(e);
+    }
+  }
+
+  // ====== ランキング表示 ======
+  function renderRanking() {
+    if (allData.length === 0) {
+      rankingContent.innerHTML = '<div class="loading">データがありません</div>';
+      return;
+    }
+
+    const sorted = [...allData].sort((a, b) => b.count - a.count);
+    rankingContent.innerHTML = sorted.map((item, i) => {
+      const rank = i + 1;
+      let medal = '';
+      if (rank === 1) medal = '<span class="medal">🥇</span>';
+      else if (rank === 2) medal = '<span class="medal">🥈</span>';
+      else if (rank === 3) medal = '<span class="medal">🥉</span>';
+      else medal = rank;
+
+      return `
+        <div class="rank-item rank-${rank}">
+          <div class="rank-num">${medal}</div>
+          <div class="rank-name">${escapeHtml(item.name)}</div>
+          <div class="rank-count">${item.count.toLocaleString()}<span class="unit">👏</span></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ====== 個別モード ======
+  function updateSelector() {
+    const current = singleSelect.value;
+    singleSelect.innerHTML = '<option value="">-- 発表者を選択 --</option>';
+    allData.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.name;
+      opt.textContent = item.name;
+      if (item.name === current) opt.selected = true;
+      singleSelect.appendChild(opt);
+    });
+    if (current) renderSingle(current);
+  }
+
+  singleSelect.addEventListener('change', () => {
+    if (singleSelect.value) {
+      renderSingle(singleSelect.value);
+    } else {
+      singleContent.innerHTML = '<div class="loading">発表者を選んでください</div>';
+    }
+  });
+
+  function renderSingle(name) {
+    const item = allData.find(d => d.name === name);
+    if (!item) return;
+    singleContent.innerHTML = `
+      <div class="name">${escapeHtml(name)}</div>
+      <div class="count-wrap celebrate" id="celebrateBox">
+        <div class="count-label">獲得拍手数</div>
+        <div>
+          <span class="count-num">${item.count.toLocaleString()}</span>
+          <span class="count-unit">👏</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // ====== コントロール ======
+  document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!confirm('全ての拍手データをリセットします。本当によろしいですか?')) return;
+    try {
+      const res = await fetch(GAS_URL + '?action=reset');
+      const data = await res.json();
+      if (data.success) {
+        alert('リセットしました');
+        loadData();
+      } else {
+        alert('リセット失敗: ' + (data.error || ''));
+      }
+    } catch (e) {
+      alert('エラー: ' + e.message);
+    }
+  });
+
+  document.getElementById('autoRefresh').addEventListener('change', (e) => {
+    if (e.target.checked) {
+      autoRefreshInterval = setInterval(loadData, 10000);
+    } else {
+      clearInterval(autoRefreshInterval);
+    }
+  });
+
+  // ====== ユーティリティ ======
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ====== 起動 ======
+  if (GAS_URL === 'https://script.google.com/a/macros/marchon.co.jp/s/AKfycbw8AhGpnu0w20gSxPAfPnVFZ-dWcFm89Abq7bk13LjlwKduCvTNowMxYBpeZH4ap5OU/exec') {
+    statusEl.textContent = '⚠️ GAS_URLが設定されていません';
+    statusEl.className = 'status error';
+  } else {
+    loadData();
+  }
+</script>
+
+</body>
+</html>
